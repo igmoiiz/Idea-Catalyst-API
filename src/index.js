@@ -21,14 +21,12 @@ const allowedOrigins = [
   "https://idea-catalyst-f0j93duqf-moiz-balochs-projects.vercel.app",
   "https://idea-catalyst-api.vercel.app",
   "http://localhost:3000",
-  "http://localhost:5173" // Default Vite port
+  "http://localhost:5173"
 ];
 
 app.use(cors({
-  origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl)
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV === 'development') {
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin) || process.env.NODE_ENV === 'development') {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
@@ -39,21 +37,24 @@ app.use(cors({
   allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept"]
 }));
 
-// Explicitly handle OPTIONS preflight requests
-app.options('*', cors());
 
 app.use(express.json());
 app.use(morgan("dev"));
 
 // Database Connection
-mongoose
-  .connect(process.env.MONGODB_URI)
-  .then(() => {
-    console.log("Connected to MongoDB");
-  })
-  .catch((err) => {
-    console.error("MongoDB connection error:", err);
-  });
+if (process.env.MONGODB_URI) {
+  mongoose
+    .connect(process.env.MONGODB_URI)
+    .then(() => {
+      console.log("Connected to MongoDB");
+    })
+    .catch((err) => {
+      console.error("MongoDB connection error:", err);
+    });
+} else {
+  console.warn("MONGODB_URI is not defined. Database features will be unavailable.");
+}
+
 
 // API Routes
 app.use("/api/auth", authRoutes);
